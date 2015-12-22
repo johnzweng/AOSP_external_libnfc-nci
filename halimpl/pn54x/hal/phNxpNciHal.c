@@ -621,14 +621,6 @@ force_download:
         }
     }
 
-    // ok, init seems complete here, let's call the SWP test function
-    // for both SWP lines from phNxpNciHal_Selftest.c:
-    NXPLOG_NCIHAL_D ("JZJZ: will finally perform SWP1 test now.");
-    phNxpNciHal_SwpTest(0x01);
-    NXPLOG_NCIHAL_D ("JZJZ: SWP1 test done, will perform SWP2 test now.");
-    phNxpNciHal_SwpTest(0x02);
-    NXPLOG_NCIHAL_D ("JZJZ: SWP2 test done.");
-
     /* Call open complete */
     phNxpNciHal_open_complete(wConfigStatus);
 
@@ -1925,6 +1917,16 @@ static void phNxpNciHal_pre_discover_complete(NFCSTATUS status)
  ******************************************************************************/
 int phNxpNciHal_close(void)
 {
+    // ok, before we start closing, let's test
+    // both SWP lines with function from phNxpNciHal_Selftest.c:
+    NXPLOG_NCIHAL_D ("JZJZ: phNxpNciHal_close was called. But before we close and release the resources we will test SWP lines:");
+    NXPLOG_NCIHAL_D ("JZJZ: will perform SWP1 test now.");
+    phNxpNciHal_SwpTest(0x01);
+    NXPLOG_NCIHAL_D ("JZJZ: SWP1 test done, will perform SWP2 test now.");
+    phNxpNciHal_SwpTest(0x02);
+    NXPLOG_NCIHAL_D ("JZJZ: SWP2 test done.");
+    NXPLOG_NCIHAL_D ("JZJZ: will now contnue with normal close...");
+
     NFCSTATUS status;
     /*NCI_RESET_CMD*/
     static uint8_t cmd_reset_nci[] = {0x20,0x00,0x01,0x00};
