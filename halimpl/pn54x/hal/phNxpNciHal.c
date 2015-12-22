@@ -26,6 +26,7 @@
 #include <phNxpConfig.h>
 #include <phNxpNciHal_NfcDepSWPrio.h>
 #include <phNxpNciHal_Kovio.h>
+#include <../inc/phNxpNciHal_SelfTest.h>
 /*********************** Global Variables *************************************/
 #define PN547C2_CLOCK_SETTING
 #undef  PN547C2_FACTORY_RESET_DEBUG
@@ -480,6 +481,8 @@ int phNxpNciHal_open(nfc_stack_callback_t *p_cback, nfc_stack_data_callback_t *p
     memset (discovery_cmd, 0, sizeof(discovery_cmd));
     discovery_cmd_len = 0;
 
+    NXPLOG_NCIHAL_D ("JZJZ: open: Initialize the TML layer..");
+
     /* Initialize TML layer */
     wConfigStatus = phTmlNfc_Init(&tTmlConfig);
     if (wConfigStatus != NFCSTATUS_SUCCESS)
@@ -487,6 +490,8 @@ int phNxpNciHal_open(nfc_stack_callback_t *p_cback, nfc_stack_data_callback_t *p
         NXPLOG_NCIHAL_E("phTmlNfc_Init Failed");
         goto clean_and_return;
     }
+
+    NXPLOG_NCIHAL_D ("JZJZ: open: TML layer initialized, create client thread..");
 
     /* Create the client thread */
     pthread_attr_t attr;
@@ -499,6 +504,8 @@ int phNxpNciHal_open(nfc_stack_callback_t *p_cback, nfc_stack_data_callback_t *p
         wConfigStatus = phTmlNfc_Shutdown();
         goto clean_and_return;
     }
+
+    NXPLOG_NCIHAL_D ("JZJZ: open: client thread created :-)");
 
     CONCURRENCY_UNLOCK();
 
@@ -519,6 +526,8 @@ int phNxpNciHal_open(nfc_stack_callback_t *p_cback, nfc_stack_data_callback_t *p
 init_retry:
 
     phNxpNciHal_ext_init();
+
+    NXPLOG_NCIHAL_D ("JZJZ: open: sending NCI reset command to NFCC...");
 
     status = phNxpNciHal_send_ext_cmd(sizeof(cmd_reset_nci),cmd_reset_nci);
     if((status != NFCSTATUS_SUCCESS) && (nxpncihal_ctrl.retry_cnt >= MAX_RETRY_COUNT))
@@ -541,6 +550,8 @@ init_retry:
         goto clean_and_return;
     }
 
+    NXPLOG_NCIHAL_D ("JZJZ: open: sending NCI init command to NFCC...");
+
     status = phNxpNciHal_send_ext_cmd(sizeof(cmd_init_nci),cmd_init_nci);
     if(status != NFCSTATUS_SUCCESS)
     {
@@ -555,6 +566,9 @@ init_retry:
         wConfigStatus = NFCSTATUS_FAILED;
         goto clean_and_return;
     }
+
+    NXPLOG_NCIHAL_D ("JZJZ: open: enable i2c frgamentation...");
+
     phNxpNciHal_enable_i2c_fragmentation();
     /*Get FW version from device*/
     status = phDnldNfc_InitImgInfo();
@@ -606,8 +620,18 @@ force_download:
                phDnldNfc_ReSetHwDevHandle();
         }
     }
+
+    // ok, init seems complete here, let's call the SWP test function
+    // for both SWP lines from phNxpNciHal_Selftest.c:
+    NXPLOG_NCIHAL_D ("JZJZ: will finally perform SWP1 test now.");
+    phNxpNciHal_SwpTest(0x01);
+    NXPLOG_NCIHAL_D ("JZJZ: SWP1 test done, will perform SWP2 test now.");
+    phNxpNciHal_SwpTest(0x02);
+    NXPLOG_NCIHAL_D ("JZJZ: SWP2 test done.");
+
     /* Call open complete */
     phNxpNciHal_open_complete(wConfigStatus);
+
 
     return wConfigStatus;
 
@@ -2478,6 +2502,10 @@ void phNxpNciHal_enable_i2c_fragmentation()
     static uint8_t cmd_init_nci[] = {0x20,0x01,0x00};
     static uint8_t get_i2c_fragmentation_cmd[] = {0x20, 0x03, 0x03, 0x01 ,0xA0 ,0x05};
     isfound = (GetNxpNumValue(NAME_NXP_I2C_FRAGMENTATION_ENABLED, (void *)&i2c_status, sizeof(i2c_status)));
+
+    NXPLOG_NCIHAL_D ("JZJZ: enable_i2c_fragmentation: send command for querying fragmentation state {0x20, 0x03, 0x03, 0x01 ,0xA0 ,0x05} to NFCC..");
+
+
     status = phNxpNciHal_send_ext_cmd(sizeof(get_i2c_fragmentation_cmd),get_i2c_fragmentation_cmd);
     if(status != NFCSTATUS_SUCCESS)
     {

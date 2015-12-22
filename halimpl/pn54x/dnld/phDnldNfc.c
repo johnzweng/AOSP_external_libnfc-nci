@@ -873,6 +873,7 @@ NFCSTATUS phDnldNfc_InitImgInfo(void)
 
     /* load the library and get the image info pointer */
 #if(NFC_NXP_CHIP_TYPE == PN548C2)
+    NXPLOG_FWDNLD_D("JZJZ init Img Info: NFC_NXP_CHIP_TYPE == PN548C2");
     if (gRecFWDwnld == TRUE)
         wStatus = phDnldNfc_LoadRecoveryFW (FW_LIB_PATH, &pImageInfo, &ImageInfoLen);
     else
@@ -896,8 +897,8 @@ NFCSTATUS phDnldNfc_InitImgInfo(void)
    /* get the MW version */
    if(NFCSTATUS_SUCCESS == wStatus)
    {
-       //NXPLOG_FWDNLD_D("MW Major Version Num - %x",NXP_MW_VERSION_MAJ);
-       //NXPLOG_FWDNLD_D("MW Minor Version Num - %x",NXP_MW_VERSION_MIN);
+       NXPLOG_FWDNLD_D("MW Major Version Num - %x",NXP_MW_VERSION_MAJ);
+       NXPLOG_FWDNLD_D("MW Minor Version Num - %x",NXP_MW_VERSION_MIN);
        wMwVer = (((uint16_t)(NXP_MW_VERSION_MAJ) << 8U) | (NXP_MW_VERSION_MIN));
    }
 

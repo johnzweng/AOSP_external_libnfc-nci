@@ -1196,12 +1196,16 @@ static NFCSTATUS phNxpNciHal_readLocked(nci_test_data_t *pData )
         goto clean_and_return;
     }
 
+    NXPLOG_NCIHAL_D("JZJZ readLocked: semaphore created, starting tml nfc read..\n");
+
     /* call read pending */
     status = phTmlNfc_Read(
             (uint8_t *) rx_data,
             (uint16_t) read_len,
             (pphTmlNfc_TransactCompletionCb_t) &hal_read_cb,
             &cb_data);
+
+    NXPLOG_NCIHAL_D("JZJZ readLocked: read returned..\n");
 
     if (status != NFCSTATUS_PENDING)
     {
@@ -1334,6 +1338,8 @@ NFCSTATUS phNxpNciHal_performTest(nci_test_data_t *pData )
 
     CONCURRENCY_LOCK();
 
+    NXPLOG_NCIHAL_D("JZJZ performTest: concurrency locked. write locked to NFCC..\n");
+
     status = phNxpNciHal_writeLocked(pData);
 
     if(status == NFCSTATUS_RESPONSE_TIMEOUT)
@@ -1345,12 +1351,16 @@ NFCSTATUS phNxpNciHal_performTest(nci_test_data_t *pData )
         goto clean_and_return;
     }
 
+    NXPLOG_NCIHAL_D("JZJZ performTest: write success. staring read locked from NFCC..\n");
+
     status = phNxpNciHal_readLocked(pData);
 
     if(status != NFCSTATUS_SUCCESS)
     {
         goto clean_and_return;
     }
+
+    NXPLOG_NCIHAL_D("JZJZ performTest: first read succeeded. starting second read locked from NFCC..\n");
 
     if(0 != pData->exp_ntf.len)
     {
@@ -1363,6 +1373,7 @@ NFCSTATUS phNxpNciHal_performTest(nci_test_data_t *pData )
     }
 
 clean_and_return:
+NXPLOG_NCIHAL_D("JZJZ performTest: at clean_and_return label.. concurrency_unlock..\n");
     CONCURRENCY_UNLOCK();
     return status;
 }
@@ -1510,34 +1521,40 @@ NFCSTATUS phNxpNciHal_SwpTest(uint8_t swp_line)
     int len = 0;
     int cnt = 0;
 
-    NXPLOG_NCIHAL_D("phNxpNciHal_SwpTest - start\n");
+    NXPLOG_NCIHAL_D("JZJZ phNxpNciHal_SwpTest - start\n");
 
     if(swp_line == 0x01)
     {
+        NXPLOG_NCIHAL_D("JZJZ phNxpNciHal_SwpTest - testing SWP line 0x01\n");
         len = (sizeof(swp1_test_data)/sizeof(swp1_test_data[0]));
 
         for(cnt = 0; cnt < len; cnt++)
         {
+            NXPLOG_NCIHAL_D("JZJZ phNxpNciHal_SwpTest - performing test...\n");
             status = phNxpNciHal_performTest(&(swp1_test_data[cnt]));
             if(status == NFCSTATUS_RESPONSE_TIMEOUT ||
                     status == NFCSTATUS_FAILED
             )
             {
+                NXPLOG_NCIHAL_D("JZJZ phNxpNciHal_SwpTest - performing test FAILED...will break loop\n");
                 break;
             }
         }
     }
     else if(swp_line == 0x02)
     {
+        NXPLOG_NCIHAL_D("JZJZ phNxpNciHal_SwpTest - testing SWP line 0x02\n");
         len = (sizeof(swp2_test_data)/sizeof(swp2_test_data[0]));
 
         for(cnt = 0; cnt < len; cnt++)
         {
+            NXPLOG_NCIHAL_D("JZJZ phNxpNciHal_SwpTest - performing test..\n");
             status = phNxpNciHal_performTest(&(swp2_test_data[cnt]));
             if(status == NFCSTATUS_RESPONSE_TIMEOUT ||
                     status == NFCSTATUS_FAILED
             )
             {
+                NXPLOG_NCIHAL_D("JZJZ phNxpNciHal_SwpTest - performing test FAILED...will break loop.\n");
                 break;
             }
         }
